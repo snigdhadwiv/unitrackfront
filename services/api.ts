@@ -6,15 +6,16 @@ interface RequestOptions extends RequestInit {
 
 class ApiService {
   private async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-    const { params, ...fetchOptions } = options
+  const { params, ...fetchOptions } = options
 
-    let url = `${API_BASE_URL}${endpoint}`
+  let url = `${API_BASE_URL}${endpoint}`
 
-    if (params) {
-      const searchParams = new URLSearchParams(params)
-      url += `?${searchParams.toString()}`
-    }
+  if (params) {
+    const searchParams = new URLSearchParams(params)
+    url += `?${searchParams.toString()}`
+  }
 
+  try {
     const response = await fetch(url, {
       ...fetchOptions,
       headers: {
@@ -23,12 +24,36 @@ class ApiService {
       },
     })
 
+    // Handle empty responses first (DELETE, POST success)
+    if (response.status === 204 || response.status === 201) {
+      return {} as T
+    }
+
     if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`)
+      // Try to get JSON error, fallback to text
+      let errorData
+      try {
+        errorData = await response.json()
+      } catch {
+        errorData = await response.text()
+      }
+      
+      console.error('🔴 API Error Details:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: url,
+        error: errorData
+      })
+      
+      throw new Error(`API Error (${response.status}): ${JSON.stringify(errorData)}`)
     }
 
     return response.json()
+  } catch (error) {
+    console.error('🔴 Network error:', error)
+    throw error
   }
+}
 
   // Auth
   async login(email: string, password: string) {
