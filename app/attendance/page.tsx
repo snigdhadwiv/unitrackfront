@@ -1,158 +1,188 @@
 "use client"
 
-import { useState } from "react"
-import { Calendar, Filter, Check, X } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Calendar, Users, CheckCircle, XCircle, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { mockAttendance, mockCourses } from "@/lib/mock-data"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { api } from "@/services/api"
+
+interface Student {
+  id: number
+  student_id: string
+  first_name: string
+  last_name: string
+}
+
+interface AttendanceRecord {
+  id: number
+  student: number
+  student_details: Student
+  date: string
+  status: string
+}
 
 export default function AttendancePage() {
-  const [attendance, setAttendance] = useState(mockAttendance)
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0])
-  const [selectedCourse, setSelectedCourse] = useState("all")
+  const [students, setStudents] = useState<Student[]>([])
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([])
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [loading, setLoading] = useState(true)
 
-  const filteredAttendance = attendance.filter((record) => {
-    const dateMatch = record.date === selectedDate
-    const courseMatch = selectedCourse === "all" || record.courseCode === selectedCourse
-    return dateMatch && courseMatch
-  })
+  useEffect(() => {
+    fetchData()
+  }, [selectedDate])
 
-  const toggleAttendance = (id: string) => {
-    setAttendance(
-      attendance.map((record) =>
-        record.id === id ? { ...record, status: record.status === "present" ? "absent" : "present" } : record,
-      ),
+  const fetchData = async () => {
+    try {
+      const [studentsData, attendanceData] = await Promise.all([
+        api.getStudents(),
+        api.getAttendance({ date: selectedDate })
+      ])
+      setStudents(studentsData)
+      setAttendance(attendanceData)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleMarkAttendance = async (studentId: number, status: string) => {
+    try {
+      const existingRecord = attendance.find(record => 
+        record.student === studentId && record.date === selectedDate
+      )
+
+      // FIXED: Proper data format for Django
+      const attendanceData = {
+        student: studentId,
+        date: selectedDate,
+        status: status
+      }
+
+      console.log('🟡 Sending to API:', attendanceData)
+
+      if (existingRecord) {
+        // FIXED: Send ALL required fields for update
+        await api.updateAttendance(existingRecord.id.toString(), attendanceData)
+      } else {
+        // FIXED: Send proper data format
+        await api.markAttendance(attendanceData)
+      }
+      
+      // Refresh data
+      fetchData()
+    } catch (error) {
+      console.error('Error marking attendance:', error)
+      alert('Failed to mark attendance: ' + error.message)
+    }
+  }
+
+  const getStudentStatus = (studentId: number) => {
+    const record = attendance.find(record => record.student === studentId && record.date === selectedDate)
+    return record?.status || null
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Attendance</h1>
+            <p className="mt-1 text-muted-foreground">Loading attendance data...</p>
+          </div>
+        </div>
+      </div>
     )
   }
 
-  const presentCount = filteredAttendance.filter((r) => r.status === "present").length
-  const absentCount = filteredAttendance.filter((r) => r.status === "absent").length
-  const attendancePercentage =
-    filteredAttendance.length > 0 ? ((presentCount / filteredAttendance.length) * 100).toFixed(1) : 0
-
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Attendance</h1>
-        <p className="mt-1 text-muted-foreground">Track and manage student attendance</p>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-lg border border-border bg-card p-4">
-          <p className="text-sm font-medium text-muted-foreground">Total Students</p>
-          <p className="mt-2 text-2xl font-bold text-foreground">{filteredAttendance.length}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card p-4">
-          <p className="text-sm font-medium text-muted-foreground">Present</p>
-          <p className="mt-2 text-2xl font-bold text-success">{presentCount}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card p-4">
-          <p className="text-sm font-medium text-muted-foreground">Absent</p>
-          <p className="mt-2 text-2xl font-bold text-destructive">{absentCount}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card p-4">
-          <p className="text-sm font-medium text-muted-foreground">Attendance Rate</p>
-          <p className="mt-2 text-2xl font-bold text-primary">{attendancePercentage}%</p>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Attendance</h1>
+          <p className="mt-1 text-muted-foreground">Mark and manage student attendance</p>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <Input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-auto"
-          />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <select
-            value={selectedCourse}
-            onChange={(e) => setSelectedCourse(e.target.value)}
-            className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
-          >
-            <option value="all">All Courses</option>
-            {mockCourses.map((course) => (
-              <option key={course.id} value={course.code}>
-                {course.code} - {course.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div className="rounded-lg border border-border bg-card">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border bg-muted/50">
-                <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Roll No</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Student Name</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Course</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Date</th>
-                <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">Status</th>
-                <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredAttendance.map((record) => (
-                <tr key={record.id} className="border-b border-border last:border-0 hover:bg-muted/30">
-                  <td className="px-6 py-4 text-sm font-medium text-foreground">{record.rollNo}</td>
-                  <td className="px-6 py-4 text-sm text-foreground">{record.studentName}</td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">
-                    {record.courseCode} - {record.courseName}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">{record.date}</td>
-                  <td className="px-6 py-4 text-center">
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ${
-                        record.status === "present"
-                          ? "bg-success/10 text-success"
-                          : "bg-destructive/10 text-destructive"
-                      }`}
-                    >
-                      {record.status === "present" ? (
-                        <>
-                          <Check className="h-3 w-3" />
-                          Present
-                        </>
-                      ) : (
-                        <>
-                          <X className="h-3 w-3" />
-                          Absent
-                        </>
-                      )}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => toggleAttendance(record.id)}
-                      className={
-                        record.status === "present"
-                          ? "border-destructive/50 text-destructive hover:bg-destructive/10"
-                          : "border-success/50 text-success hover:bg-success/10"
-                      }
-                    >
-                      {record.status === "present" ? "Mark Absent" : "Mark Present"}
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {filteredAttendance.length === 0 && (
-          <div className="py-12 text-center">
-            <p className="text-muted-foreground">No attendance records found for the selected date and course</p>
+      {/* Date Selector */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-4">
+            <Calendar className="h-5 w-5 text-muted-foreground" />
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="px-3 py-2 border border-border rounded-md"
+            />
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Users className="h-4 w-4" />
+              <span>{students.length} students</span>
+            </div>
           </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
+
+      {/* Attendance Grid */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Student Attendance for {selectedDate}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {students.map((student) => {
+              const status = getStudentStatus(student.id)
+              
+              return (
+                <div key={student.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
+                  <div>
+                    <h3 className="font-medium">
+                      {student.first_name} {student.last_name}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">ID: {student.student_id}</p>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant={status === 'P' ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handleMarkAttendance(student.id, 'P')}
+                      className="gap-2"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Present
+                    </Button>
+                    
+                    <Button
+                      variant={status === 'A' ? "destructive" : "outline"}
+                      size="sm"
+                      onClick={() => handleMarkAttendance(student.id, 'A')}
+                      className="gap-2"
+                    >
+                      <XCircle className="h-4 w-4" />
+                      Absent
+                    </Button>
+                    
+                    <Button
+                      variant={status === 'L' ? "secondary" : "outline"}
+                      size="sm"
+                      onClick={() => handleMarkAttendance(student.id, 'L')}
+                      className="gap-2"
+                    >
+                      <Clock className="h-4 w-4" />
+                      Late
+                    </Button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

@@ -1,143 +1,183 @@
 "use client"
 
-import { useState } from "react"
-import { Plus, Search, Edit, Trash2, BookOpen } from "lucide-react"
+import { useState, useEffect } from "react"
+import { BookOpen, Upload, Filter, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { mockCourses } from "@/lib/mock-data"
+import { api } from "@/services/api"
 import { CourseModal } from "@/components/course-modal"
+import Link from "next/link"
+
+interface Course {
+  id: number
+  course_code: string
+  course_name: string
+  credits: number
+  specialization: string
+  year: number
+  semester: number
+  description?: string
+}
 
 export default function CoursesPage() {
-  const [courses, setCourses] = useState(mockCourses)
-  const [searchQuery, setSearchQuery] = useState("")
+  const [courses, setCourses] = useState<Course[]>([])
+  const [filteredCourses, setFilteredCourses] = useState<Course[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [selectedCourse, setSelectedCourse] = useState<any>(null)
-  const [modalMode, setModalMode] = useState<"add" | "edit">("add")
+  const [filters, setFilters] = useState({
+    specialization: "",
+    year: "",
+    semester: ""
+  })
 
-  const filteredCourses = courses.filter(
-    (course) =>
-      course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.faculty.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.department.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+  useEffect(() => {
+    fetchCourses()
+  }, [])
 
-  const handleAdd = () => {
-    setSelectedCourse(null)
-    setModalMode("add")
-    setIsModalOpen(true)
-  }
+  useEffect(() => {
+    filterCourses()
+  }, [courses, filters])
 
-  const handleEdit = (course: any) => {
-    setSelectedCourse(course)
-    setModalMode("edit")
-    setIsModalOpen(true)
-  }
-
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this course?")) {
-      setCourses(courses.filter((c) => c.id !== id))
+  const fetchCourses = async () => {
+    try {
+      const coursesData = await api.getCourses()
+      setCourses(coursesData)
+    } catch (error) {
+      console.error('Error fetching courses:', error)
     }
   }
 
-  const handleSave = (courseData: any) => {
-    if (modalMode === "add") {
-      const newCourse = {
-        ...courseData,
-        id: String(courses.length + 1),
-      }
-      setCourses([...courses, newCourse])
-    } else {
-      setCourses(courses.map((c) => (c.id === selectedCourse.id ? { ...c, ...courseData } : c)))
+  const filterCourses = () => {
+    let filtered = courses
+    
+    if (filters.specialization) {
+      filtered = filtered.filter(course => 
+        course.specialization.toLowerCase().includes(filters.specialization.toLowerCase())
+      )
     }
-    setIsModalOpen(false)
+    
+    if (filters.year) {
+      filtered = filtered.filter(course => course.year === parseInt(filters.year))
+    }
+    
+    if (filters.semester) {
+      filtered = filtered.filter(course => course.semester === parseInt(filters.semester))
+    }
+    
+    setFilteredCourses(filtered)
+  }
+
+  const handleAddCourse = () => {
+    setIsModalOpen(true)
+  }
+
+  const handleSaveCourse = async (courseData: any) => {
+    try {
+      await api.createCourse(courseData)
+      fetchCourses() // Refresh the list
+      setIsModalOpen(false)
+    } catch (error) {
+      console.error('Error creating course:', error)
+      alert('Failed to create course')
+    }
   }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Courses</h1>
-          <p className="mt-1 text-muted-foreground">Manage course catalog and assignments</p>
+          <h1 className="text-3xl font-bold text-foreground">Course Management</h1>
+          <p className="mt-1 text-muted-foreground">Manage curriculum, syllabus, and subjects</p>
         </div>
-        <Button onClick={handleAdd} className="gap-2">
+        <Button onClick={handleAddCourse} className="gap-2">
           <Plus className="h-4 w-4" />
           Add Course
         </Button>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search by course name, code, faculty, or department..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredCourses.map((course) => (
-          <div key={course.id} className="rounded-lg border border-border bg-card p-6">
-            <div className="mb-4 flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <BookOpen className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">{course.name}</h3>
-                  <p className="text-sm text-muted-foreground">{course.code}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Faculty:</span>
-                <span className="font-medium text-foreground">{course.faculty}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Department:</span>
-                <span className="font-medium text-foreground">{course.department}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Credits:</span>
-                <span className="font-medium text-foreground">{course.credits}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Semester:</span>
-                <span className="font-medium text-foreground">{course.semester}</span>
-              </div>
-            </div>
-
-            <div className="mt-4 flex gap-2 border-t border-border pt-4">
-              <Button variant="outline" size="sm" className="flex-1 bg-transparent" onClick={() => handleEdit(course)}>
-                <Edit className="mr-2 h-4 w-4" />
-                Edit
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => handleDelete(course.id)}>
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            </div>
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-4">
+            <Filter className="h-5 w-5 text-muted-foreground" />
+            <Input
+              placeholder="Specialization (CS, IT, etc.)"
+              value={filters.specialization}
+              onChange={(e) => setFilters({...filters, specialization: e.target.value})}
+              className="w-48"
+            />
+            <Input
+              type="number"
+              placeholder="Year"
+              value={filters.year}
+              onChange={(e) => setFilters({...filters, year: e.target.value})}
+              className="w-32"
+            />
+            <Input
+              type="number"
+              placeholder="Semester"
+              value={filters.semester}
+              onChange={(e) => setFilters({...filters, semester: e.target.value})}
+              className="w-32"
+            />
           </div>
-        ))}
-      </div>
+        </CardContent>
+      </Card>
+
+      {/* Courses Grid */}
+      {/* Courses Grid */}
+<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+  {filteredCourses.map((course) => (
+    <Link key={course.id} href={`/courses/${course.id}`}>
+      <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BookOpen className="h-5 w-5" />
+            {course.course_code}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div>
+            <h3 className="font-semibold">{course.course_name}</h3>
+            <p className="text-sm text-muted-foreground">
+              {course.specialization} • Year {course.year} • Sem {course.semester}
+            </p>
+            {course.description && (
+              <p className="text-sm text-muted-foreground mt-2">{course.description}</p>
+            )}
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm">Credits: {course.credits}</span>
+            <div className="text-xs text-muted-foreground">Click to view details →</div>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  ))}
+</div>
 
       {filteredCourses.length === 0 && (
-        <div className="rounded-lg border border-border bg-card py-12 text-center">
-          <p className="text-muted-foreground">No courses found</p>
-        </div>
+        <Card>
+          <CardContent className="p-12 text-center">
+            <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium">No courses found</h3>
+            <p className="text-muted-foreground mt-2">
+              {courses.length === 0 ? "No courses added yet" : "Try changing your filters"}
+            </p>
+            <Button onClick={handleAddCourse} className="mt-4 gap-2">
+              <Plus className="h-4 w-4" />
+              Add Your First Course
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
+      {/* Course Modal */}
       <CourseModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSave={handleSave}
-        course={selectedCourse}
-        mode={modalMode}
+        onSave={handleSaveCourse}
       />
     </div>
   )

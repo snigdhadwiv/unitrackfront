@@ -6,54 +6,54 @@ interface RequestOptions extends RequestInit {
 
 class ApiService {
   private async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-  const { params, ...fetchOptions } = options
+    const { params, ...fetchOptions } = options
 
-  let url = `${API_BASE_URL}${endpoint}`
+    let url = `${API_BASE_URL}${endpoint}`
 
-  if (params) {
-    const searchParams = new URLSearchParams(params)
-    url += `?${searchParams.toString()}`
-  }
-
-  try {
-    const response = await fetch(url, {
-      ...fetchOptions,
-      headers: {
-        "Content-Type": "application/json",
-        ...fetchOptions.headers,
-      },
-    })
-
-    // Handle empty responses first (DELETE, POST success)
-    if (response.status === 204 || response.status === 201) {
-      return {} as T
+    if (params) {
+      const searchParams = new URLSearchParams(params)
+      url += `?${searchParams.toString()}`
     }
 
-    if (!response.ok) {
-      // Try to get JSON error, fallback to text
-      let errorData
-      try {
-        errorData = await response.json()
-      } catch {
-        errorData = await response.text()
-      }
-      
-      console.error('🔴 API Error Details:', {
-        status: response.status,
-        statusText: response.statusText,
-        url: url,
-        error: errorData
+    try {
+      const response = await fetch(url, {
+        ...fetchOptions,
+        headers: {
+          "Content-Type": "application/json",
+          ...fetchOptions.headers,
+        },
       })
-      
-      throw new Error(`API Error (${response.status}): ${JSON.stringify(errorData)}`)
-    }
 
-    return response.json()
-  } catch (error) {
-    console.error('🔴 Network error:', error)
-    throw error
+      // Handle empty responses first (DELETE, POST success)
+      if (response.status === 204 || response.status === 201) {
+        return {} as T
+      }
+
+      if (!response.ok) {
+        // Try to get JSON error, fallback to text
+        let errorData
+        try {
+          errorData = await response.json()
+        } catch {
+          errorData = await response.text()
+        }
+        
+        console.error('🔴 API Error Details:', {
+          status: response.status,
+          statusText: response.statusText,
+          url: url,
+          error: errorData
+        })
+        
+        throw new Error(`API Error (${response.status}): ${JSON.stringify(errorData)}`)
+      }
+
+      return response.json()
+    } catch (error) {
+      console.error('🔴 Network error:', error)
+      throw error
+    }
   }
-}
 
   // Auth
   async login(email: string, password: string) {
@@ -92,13 +92,69 @@ class ApiService {
     })
   }
 
-  // Courses
+  // Courses - ENHANCED METHODS
   async getCourses(params?: Record<string, string>) {
     return this.request("/courses/", { params })
   }
 
+  async getCourse(id: string) {
+    return this.request(`/courses/${id}/`)
+  }
+
   async createCourse(data: any) {
     return this.request("/courses/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateCourse(id: string, data: any) {
+    return this.request(`/courses/${id}/`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteCourse(id: string) {
+    return this.request(`/courses/${id}/`, {
+      method: "DELETE",
+    })
+  }
+
+  // Subjects
+  async getSubjects(params?: Record<string, string>) {
+    return this.request("/subjects/", { params })
+  }
+
+  async getSubject(id: string) {
+    return this.request(`/subjects/${id}/`)
+  }
+
+  async createSubject(data: any) {
+    return this.request("/subjects/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateSubject(id: string, data: any) {
+    return this.request(`/subjects/${id}/`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    })
+  }
+
+  // Syllabus
+  async getSyllabus(params?: Record<string, string>) {
+    return this.request("/syllabus/", { params })
+  }
+
+  async getSyllabusItem(id: string) {
+    return this.request(`/syllabus/${id}/`)
+  }
+
+  async createSyllabus(data: any) {
+    return this.request("/syllabus/", {
       method: "POST",
       body: JSON.stringify(data),
     })
@@ -128,15 +184,43 @@ class ApiService {
     })
   }
 
-  // Marks
+  async updateAttendance(id: string, data: any) {
+    return this.request(`/attendance/${id}/`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    })
+  }
+
+  // Marks - ENHANCED METHODS
   async getMarks(params?: Record<string, string>) {
     return this.request("/marks/", { params })
+  }
+
+  async getStudentMarks(studentId: string) {
+    return this.request(`/marks/?student=${studentId}`)
+  }
+
+  async getSubjectMarks(subjectId: string) {
+    return this.request(`/marks/?subject=${subjectId}`)
   }
 
   async createMarks(data: any) {
     return this.request("/marks/", {
       method: "POST",
       body: JSON.stringify(data),
+    })
+  }
+
+  async updateMarks(id: string, data: any) {
+    return this.request(`/marks/${id}/`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteMarks(id: string) {
+    return this.request(`/marks/${id}/`, {
+      method: "DELETE",
     })
   }
 

@@ -19,6 +19,7 @@ const navigation = [
   { name: "Courses", href: "/courses", icon: BookOpen },
   { name: "Faculty", href: "/faculty", icon: GraduationCap },
   { name: "Attendance", href: "/attendance", icon: ClipboardCheck },
+  { name: "Attendance Dashboard", href: "/attendance-dashboard", icon: ClipboardCheck },
   { name: "Marks", href: "/marks", icon: FileText },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Settings", href: "/settings", icon: Settings },
