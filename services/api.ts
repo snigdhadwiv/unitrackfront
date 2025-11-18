@@ -54,11 +54,11 @@ class ApiService {
     }
   }
 
-  // Auth methods
-  async login(email: string, password: string) {
+  // 🔑 UPDATED AUTH METHODS - NOW ACCEPTS IDENTIFIER
+  async login(identifier: string, password: string) {
     return this.request("/auth/login/", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ identifier, password }), // Changed from 'email' to 'identifier'
     })
   }
 
@@ -77,6 +77,11 @@ class ApiService {
 
   async getCurrentUser() {
     return this.request("/auth/me/")
+  }
+
+  // NEW: Get user by identifier (email or username)
+  async getUserByIdentifier(identifier: string) {
+    return this.request(`/auth/user/${identifier}/`)
   }
 
   // Enrollment methods
@@ -152,6 +157,16 @@ class ApiService {
     return this.request(`/courses/${id}/`, {
       method: "DELETE",
     })
+  }
+
+  // NEW: Faculty Courses (courses assigned to faculty)
+  async getFacultyCourses(facultyId: string) {
+    return this.request(`/faculty/${facultyId}/courses/`)
+  }
+
+  // NEW: Course Students (students enrolled in a course)
+  async getCourseStudents(courseId: string) {
+    return this.request(`/courses/${courseId}/students/`)
   }
 
   // Subjects

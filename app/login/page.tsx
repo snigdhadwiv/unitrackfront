@@ -4,7 +4,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Lock, Mail, GraduationCap } from "lucide-react"
+import { Lock, Mail, User, GraduationCap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,7 +12,7 @@ import { api } from "@/services/api"
 
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState("")
+  const [identifier, setIdentifier] = useState("") // Can be email OR username
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -23,7 +23,8 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      const response = await api.login(email, password)
+      // Send both identifier and password to backend
+      const response = await api.login(identifier, password)
       
       // Store user data
       localStorage.setItem("user", JSON.stringify(response.user))
@@ -31,14 +32,14 @@ export default function LoginPage() {
       
       // Redirect based on role
       if (response.user.role === 'STUDENT') {
-        router.push("/student-dashboard")  // ← UPDATED THIS LINE
+        router.push("/student-dashboard")
       } else if (response.user.role === 'FACULTY') {
         router.push('/faculty/dashboard')
       } else {
-        router.push("/dashboard") // Admin
+        router.push("/admin/dashboard") // Admin
       }
     } catch (err: any) {
-      setError(err.message || "Invalid email or password")
+      setError(err.message || "Invalid credentials")
     } finally {
       setIsLoading(false)
     }
@@ -61,20 +62,20 @@ export default function LoginPage() {
 
           <div className="mb-8">
             <h2 className="text-3xl font-bold text-foreground">Welcome back</h2>
-            <p className="mt-2 text-muted-foreground">Sign in to access your dashboard</p>
+            <p className="mt-2 text-muted-foreground">Sign in with email or username</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="identifier">Email or Username</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="student@college.edu"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="identifier"
+                  type="text"
+                  placeholder="student@college.edu or jlu21001"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   className="pl-10"
                   required
                 />
@@ -115,7 +116,9 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 text-center text-sm text-muted-foreground">
-            Use your registered email and password
+            <p><strong>Students:</strong> Use student ID (jlu21001) or email</p>
+            <p><strong>Faculty:</strong> Use email or username</p>
+            <p><strong>Password:</strong> student123 / faculty123</p>
           </div>
         </div>
       </div>
@@ -129,26 +132,26 @@ export default function LoginPage() {
                 <GraduationCap className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-foreground">Manage Everything</h3>
-                <p className="text-sm text-muted-foreground">All in one place</p>
+                <h3 className="text-xl font-bold text-foreground">Flexible Login</h3>
+                <p className="text-sm text-muted-foreground">Email or Username</p>
               </div>
             </div>
             <ul className="space-y-3">
               <li className="flex items-center gap-3 text-sm text-foreground">
                 <div className="h-2 w-2 rounded-full bg-primary" />
-                Student & Faculty Management
+                Students: jlu21001 or email
               </li>
               <li className="flex items-center gap-3 text-sm text-foreground">
                 <div className="h-2 w-2 rounded-full bg-primary" />
-                Attendance Tracking
+                Faculty: email or username
               </li>
               <li className="flex items-center gap-3 text-sm text-foreground">
                 <div className="h-2 w-2 rounded-full bg-primary" />
-                Marks & Grade Management
+                Admin: admin credentials
               </li>
               <li className="flex items-center gap-3 text-sm text-foreground">
                 <div className="h-2 w-2 rounded-full bg-primary" />
-                Analytics & Reports
+                Secure authentication
               </li>
             </ul>
           </div>
