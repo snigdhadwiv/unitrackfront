@@ -22,15 +22,14 @@ class ApiService {
           "Content-Type": "application/json",
           ...fetchOptions.headers,
         },
+        credentials: fetchOptions.credentials || "include",
       })
 
-      // Handle empty responses first (DELETE, POST success)
       if (response.status === 204 || response.status === 201) {
         return {} as T
       }
 
       if (!response.ok) {
-        // Try to get JSON error, fallback to text
         let errorData
         try {
           errorData = await response.json()
@@ -55,11 +54,45 @@ class ApiService {
     }
   }
 
-  // Auth
+  // Auth methods
   async login(email: string, password: string) {
     return this.request("/auth/login/", {
       method: "POST",
       body: JSON.stringify({ email, password }),
+    })
+  }
+
+  async register(userData: any) {
+    return this.request("/auth/register/", {
+      method: "POST",
+      body: JSON.stringify(userData),
+    })
+  }
+
+  async logout() {
+    return this.request("/auth/logout/", {
+      method: "POST",
+    })
+  }
+
+  async getCurrentUser() {
+    return this.request("/auth/me/")
+  }
+
+  // Enrollment methods
+  async getStudentEnrollments(studentId: string) {
+    return this.request(`/enrollments/student/${studentId}/enrollments/`)
+  }
+
+  async getMyEnrollments() {
+    const user = JSON.parse(localStorage.getItem("user") || "{}")
+    return this.getStudentEnrollments(user.id)
+  }
+
+  async createEnrollment(data: any) {
+    return this.request("/enrollments/enrollments/", {
+      method: "POST",
+      body: JSON.stringify(data),
     })
   }
 
@@ -92,7 +125,7 @@ class ApiService {
     })
   }
 
-  // Courses - ENHANCED METHODS
+  // Courses
   async getCourses(params?: Record<string, string>) {
     return this.request("/courses/", { params })
   }
@@ -191,7 +224,7 @@ class ApiService {
     })
   }
 
-  // Marks - ENHANCED METHODS
+  // Marks
   async getMarks(params?: Record<string, string>) {
     return this.request("/marks/", { params })
   }

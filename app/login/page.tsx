@@ -8,16 +8,9 @@ import { Lock, Mail, GraduationCap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { api } from "@/services/api"  // ← ADD THIS IMPORT
+import { api } from "@/services/api"
 
 export default function LoginPage() {
-  // ← ADD THIS useEffect TO TEST API
-  useEffect(() => {
-    api.getStudents()
-      .then(students => console.log('Real students:', students))
-      .catch(error => console.log('Backend not ready yet (normal):', error))
-  }, [])
-
   const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -30,21 +23,22 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      // Mock login - replace with actual API call
-      // await api.login(email, password)
-
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Mock successful login
-      if (email && password) {
-        localStorage.setItem("isAuthenticated", "true")
-        router.push("/dashboard")
+      const response = await api.login(email, password)
+      
+      // Store user data
+      localStorage.setItem("user", JSON.stringify(response.user))
+      localStorage.setItem("isAuthenticated", "true")
+      
+      // Redirect based on role
+      if (response.user.role === 'STUDENT') {
+        router.push("/student-dashboard")  // ← UPDATED THIS LINE
+      } else if (response.user.role === 'FACULTY') {
+        router.push("/faculty-dashboard") 
       } else {
-        setError("Please enter both email and password")
+        router.push("/dashboard") // Admin
       }
-    } catch (err) {
-      setError("Invalid email or password")
+    } catch (err: any) {
+      setError(err.message || "Invalid email or password")
     } finally {
       setIsLoading(false)
     }
@@ -120,7 +114,9 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-muted-foreground">Demo credentials: any email and password</div>
+          <div className="mt-6 text-center text-sm text-muted-foreground">
+            Use your registered email and password
+          </div>
         </div>
       </div>
 
