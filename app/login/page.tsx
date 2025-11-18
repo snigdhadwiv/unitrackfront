@@ -33,7 +33,7 @@ export default function LoginPage() {
       if (response.user.role === 'STUDENT') {
         router.push("/student-dashboard")  // ← UPDATED THIS LINE
       } else if (response.user.role === 'FACULTY') {
-        router.push("/faculty-dashboard") 
+        router.push('/faculty/dashboard')
       } else {
         router.push("/dashboard") // Admin
       }
