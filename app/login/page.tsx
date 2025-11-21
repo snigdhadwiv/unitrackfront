@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { api } from "@/services/api"
+import Image from "next/image"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -50,18 +51,19 @@ export default function LoginPage() {
       {/* Left side - Login Form */}
       <div className="flex w-full flex-col justify-center px-8 lg:w-1/2 lg:px-16">
         <div className="mx-auto w-full max-w-md">
-          <div className="mb-8 flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-              <GraduationCap className="h-7 w-7 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Unitrack</h1>
-              <p className="text-sm text-muted-foreground">College ERP System</p>
-            </div>
+          {/* JLU Logo positioned in the top left */}
+          <div className="mb-8">
+            <Image 
+              src="/jlulogo.png" 
+              alt="JLU Logo" 
+              width={120} 
+              height={120}
+              className="h-24 w-24 object-contain"
+            />
           </div>
 
           <div className="mb-8">
-            <h2 className="text-3xl font-bold text-foreground">Welcome back</h2>
+            <h2 className="text-3xl font-bold text-foreground">Welcome to Unitrack</h2>
             <p className="mt-2 text-muted-foreground">Sign in with email or username</p>
           </div>
 
@@ -123,35 +125,55 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right side - Illustration */}
-      <div className="hidden lg:flex lg:w-1/2 lg:items-center lg:justify-center lg:bg-muted">
-        <div className="max-w-md space-y-6 p-8">
-          <div className="rounded-2xl border border-border bg-card p-8">
+      {/* Right side - Background Image with Overlay */}
+      <div className="hidden lg:flex lg:w-1/2 lg:items-center lg:justify-center relative bg-muted">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <Image
+            src="/jlu1.jpg" // Replace with your actual image path
+            alt="Background"
+            fill
+            className="object-cover"
+            priority
+          />
+          {/* Overlay for better readability */}
+          <div className="absolute inset-0 bg-black/20"></div>
+        </div>
+        
+        {/* Content Overlay */}
+        <div className="relative z-10 max-w-md space-y-6 p-8">
+          <div className="rounded-2xl border border-border bg-card/80 backdrop-blur-sm p-8">
             <div className="mb-6 flex items-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
-                <GraduationCap className="h-8 w-8 text-primary" />
+                <Image 
+                  src="/jlulogo.png" 
+                  alt="JLU Logo" 
+                  width={40} 
+                  height={40}
+                  className="h-10 w-10 object-contain"
+                />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-foreground">Flexible Login</h3>
-                <p className="text-sm text-muted-foreground">Email or Username</p>
+                <h3 className="text-xl font-bold text-foreground">MINI ERP</h3>
+                <p className="text-sm text-muted-foreground">Track your JLU</p>
               </div>
             </div>
             <ul className="space-y-3">
               <li className="flex items-center gap-3 text-sm text-foreground">
                 <div className="h-2 w-2 rounded-full bg-primary" />
-                Students: jlu21001 or email
+                Track attendance, courses, assignments & grades
               </li>
               <li className="flex items-center gap-3 text-sm text-foreground">
                 <div className="h-2 w-2 rounded-full bg-primary" />
-                Faculty: email or username
+                 Faculty presence, student tracking & timetables
               </li>
               <li className="flex items-center gap-3 text-sm text-foreground">
                 <div className="h-2 w-2 rounded-full bg-primary" />
-                Admin: admin credentials
+                Student-driven approach for entire university
               </li>
               <li className="flex items-center gap-3 text-sm text-foreground">
                 <div className="h-2 w-2 rounded-full bg-primary" />
-                Secure authentication
+                Multiple user roles and secure authentication
               </li>
             </ul>
           </div>

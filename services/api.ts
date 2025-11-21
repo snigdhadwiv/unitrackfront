@@ -9,7 +9,6 @@ class ApiService {
     const { params, ...fetchOptions } = options
 
     let url = `${API_BASE_URL}${endpoint}`
-
     if (params) {
       const searchParams = new URLSearchParams(params)
       url += `?${searchParams.toString()}`
@@ -25,9 +24,7 @@ class ApiService {
         credentials: fetchOptions.credentials || "include",
       })
 
-      if (response.status === 204 || response.status === 201) {
-        return {} as T
-      }
+      if (response.status === 204 || response.status === 201) return {} as T
 
       if (!response.ok) {
         let errorData
@@ -36,14 +33,7 @@ class ApiService {
         } catch {
           errorData = await response.text()
         }
-        
-        console.error('🔴 API Error Details:', {
-          status: response.status,
-          statusText: response.statusText,
-          url: url,
-          error: errorData
-        })
-        
+        console.error('🔴 API Error Details:', { status: response.status, url, error: errorData })
         throw new Error(`API Error (${response.status}): ${JSON.stringify(errorData)}`)
       }
 
@@ -54,11 +44,16 @@ class ApiService {
     }
   }
 
-  // 🔑 UPDATED AUTH METHODS - NOW ACCEPTS IDENTIFIER
+  // 🔑 LOGIN THAT WORKS FOR EMAIL OR USERNAME
   async login(identifier: string, password: string) {
+    const isEmail = identifier.includes("@")
+    const loginData = isEmail
+      ? { email: identifier, password }
+      : { username: identifier, password }
+
     return this.request("/auth/login/", {
       method: "POST",
-      body: JSON.stringify({ identifier, password }), // Changed from 'email' to 'identifier'
+      body: JSON.stringify(loginData),
     })
   }
 
@@ -70,209 +65,106 @@ class ApiService {
   }
 
   async logout() {
-    return this.request("/auth/logout/", {
-      method: "POST",
-    })
+    return this.request("/auth/logout/", { method: "POST" })
   }
 
   async getCurrentUser() {
     return this.request("/auth/me/")
   }
 
-  // NEW: Get user by identifier (email or username)
   async getUserByIdentifier(identifier: string) {
     return this.request(`/auth/user/${identifier}/`)
   }
 
-  // Enrollment methods
-  async getStudentEnrollments(studentId: string) {
-    return this.request(`/enrollments/student/${studentId}/enrollments/`)
-  }
-
-  async getMyEnrollments() {
-    const user = JSON.parse(localStorage.getItem("user") || "{}")
-    return this.getStudentEnrollments(user.id)
-  }
-
-  async createEnrollment(data: any) {
-    return this.request("/enrollments/enrollments/", {
-      method: "POST",
-      body: JSON.stringify(data),
-    })
-  }
-
-  // Students
+  // ---------------- STUDENT METHODS ----------------
   async getStudents(params?: Record<string, string>) {
     return this.request("/students/", { params })
   }
-
   async getStudent(id: string) {
     return this.request(`/students/${id}/`)
   }
-
   async createStudent(data: any) {
-    return this.request("/students/", {
-      method: "POST",
-      body: JSON.stringify(data),
-    })
+    return this.request("/students/", { method: "POST", body: JSON.stringify(data) })
   }
-
   async updateStudent(id: string, data: any) {
-    return this.request(`/students/${id}/`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    })
+    return this.request(`/students/${id}/`, { method: "PUT", body: JSON.stringify(data) })
   }
-
   async deleteStudent(id: string) {
-    return this.request(`/students/${id}/`, {
-      method: "DELETE",
-    })
+    return this.request(`/students/${id}/`, { method: "DELETE" })
   }
 
-  // Courses
+  // ---------------- COURSES ----------------
   async getCourses(params?: Record<string, string>) {
     return this.request("/courses/", { params })
   }
-
   async getCourse(id: string) {
     return this.request(`/courses/${id}/`)
   }
-
   async createCourse(data: any) {
-    return this.request("/courses/", {
-      method: "POST",
-      body: JSON.stringify(data),
-    })
+    return this.request("/courses/", { method: "POST", body: JSON.stringify(data) })
   }
-
   async updateCourse(id: string, data: any) {
-    return this.request(`/courses/${id}/`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    })
+    return this.request(`/courses/${id}/`, { method: "PUT", body: JSON.stringify(data) })
   }
-
   async deleteCourse(id: string) {
-    return this.request(`/courses/${id}/`, {
-      method: "DELETE",
-    })
+    return this.request(`/courses/${id}/`, { method: "DELETE" })
   }
 
-  // NEW: Faculty Courses (courses assigned to faculty)
+  // ---------------- FACULTY ----------------
+  async getFaculty(params?: Record<string, string>) {
+    return this.request("/faculty/", { params })
+  }
+  async createFaculty(data: any) {
+    return this.request("/faculty/", { method: "POST", body: JSON.stringify(data) })
+  }
   async getFacultyCourses(facultyId: string) {
     return this.request(`/faculty/${facultyId}/courses/`)
   }
 
-  // NEW: Course Students (students enrolled in a course)
-  async getCourseStudents(courseId: string) {
-    return this.request(`/courses/${courseId}/students/`)
+  // ---------------- ENROLLMENTS ----------------
+  async getStudentEnrollments(studentId: string) {
+    return this.request(`/enrollments/student/${studentId}/enrollments/`)
+  }
+  async getMyEnrollments() {
+    const user = JSON.parse(localStorage.getItem("user") || "{}")
+    return this.getStudentEnrollments(user.id)
+  }
+  async createEnrollment(data: any) {
+    return this.request("/enrollments/enrollments/", { method: "POST", body: JSON.stringify(data) })
   }
 
-  // Subjects
-  async getSubjects(params?: Record<string, string>) {
-    return this.request("/subjects/", { params })
-  }
-
-  async getSubject(id: string) {
-    return this.request(`/subjects/${id}/`)
-  }
-
-  async createSubject(data: any) {
-    return this.request("/subjects/", {
-      method: "POST",
-      body: JSON.stringify(data),
-    })
-  }
-
-  async updateSubject(id: string, data: any) {
-    return this.request(`/subjects/${id}/`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    })
-  }
-
-  // Syllabus
-  async getSyllabus(params?: Record<string, string>) {
-    return this.request("/syllabus/", { params })
-  }
-
-  async getSyllabusItem(id: string) {
-    return this.request(`/syllabus/${id}/`)
-  }
-
-  async createSyllabus(data: any) {
-    return this.request("/syllabus/", {
-      method: "POST",
-      body: JSON.stringify(data),
-    })
-  }
-
-  // Faculty
-  async getFaculty(params?: Record<string, string>) {
-    return this.request("/faculty/", { params })
-  }
-
-  async createFaculty(data: any) {
-    return this.request("/faculty/", {
-      method: "POST",
-      body: JSON.stringify(data),
-    })
-  }
-
-  // Attendance
+  // ---------------- ATTENDANCE ----------------
   async getAttendance(params?: Record<string, string>) {
     return this.request("/attendance/", { params })
   }
-
   async markAttendance(data: any) {
-    return this.request("/attendance/", {
-      method: "POST",
-      body: JSON.stringify(data),
-    })
+    return this.request("/attendance/", { method: "POST", body: JSON.stringify(data) })
   }
-
   async updateAttendance(id: string, data: any) {
-    return this.request(`/attendance/${id}/`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    })
+    return this.request(`/attendance/${id}/`, { method: "PUT", body: JSON.stringify(data) })
   }
 
-  // Marks
+  // ---------------- MARKS ----------------
   async getMarks(params?: Record<string, string>) {
     return this.request("/marks/", { params })
   }
-
   async getStudentMarks(studentId: string) {
     return this.request(`/marks/?student=${studentId}`)
   }
-
   async getSubjectMarks(subjectId: string) {
     return this.request(`/marks/?subject=${subjectId}`)
   }
-
   async createMarks(data: any) {
-    return this.request("/marks/", {
-      method: "POST",
-      body: JSON.stringify(data),
-    })
+    return this.request("/marks/", { method: "POST", body: JSON.stringify(data) })
   }
-
   async updateMarks(id: string, data: any) {
-    return this.request(`/marks/${id}/`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    })
+    return this.request(`/marks/${id}/`, { method: "PUT", body: JSON.stringify(data) })
   }
-
   async deleteMarks(id: string) {
-    return this.request(`/marks/${id}/`, {
-      method: "DELETE",
-    })
+    return this.request(`/marks/${id}/`, { method: "DELETE" })
   }
 
-  // Analytics
+  // ---------------- ANALYTICS ----------------
   async getAnalytics() {
     return this.request("/analytics/")
   }
