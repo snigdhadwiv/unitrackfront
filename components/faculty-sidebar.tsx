@@ -24,9 +24,14 @@ export function FacultySidebar() {
   ]
 
   return (
-    <div className="flex w-64 flex-col bg-white border-r">
+    <div 
+      className="flex w-64 flex-col border-r bg-cover bg-center bg-no-repeat"
+      style={{
+        backgroundImage: "linear-gradient(rgba(30, 41, 59, 0.5), rgba(15, 23, 42, 0.9)), url('/sidebar2jlu.png')",
+      }}
+    >
       {/* Sidebar header */}
-      <div className="flex items-center justify-center h-16 flex-shrink-0 px-4 bg-blue-600">
+      <div className="flex items-center justify-center h-16 flex-shrink-0 px-4 bg-black/30 backdrop-blur-sm border-b border-white/20">
         <h1 className="text-lg font-bold text-white">Faculty Portal</h1>
       </div>
       
@@ -39,10 +44,10 @@ export function FacultySidebar() {
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors backdrop-blur-sm ${
                   isActive
-                    ? "bg-blue-100 text-blue-700 border-r-2 border-blue-600"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                    ? "bg-blue-500/80 text-white shadow-lg border-r-2 border-blue-300"
+                    : "text-white/90 hover:bg-white/10 hover:text-white"
                 }`}
               >
                 <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />

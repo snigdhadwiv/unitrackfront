@@ -4,7 +4,8 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Lock, Mail, User, GraduationCap } from "lucide-react"
+import { Lock, Mail, User, GraduationCap, ExternalLink, Globe } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -176,6 +177,45 @@ export default function LoginPage() {
                 Multiple user roles and secure authentication
               </li>
             </ul>
+
+            {/* Website Buttons */}
+            <div className="mt-8 space-y-4">
+              <a 
+                href="https://panel123.s3.ap-south-1.amazonaws.com/360JLU/index.html" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center justify-between rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 px-4 py-3 text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="rounded-full bg-white/20 p-2">
+                    <GraduationCap className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">360° Campus Tour</p>
+                    <p className="text-sm text-white/80">Virtual JLU Experience</p>
+                  </div>
+                </div>
+                <ExternalLink className="h-4 w-4" />
+              </a>
+
+              <a 
+                href="https://jlu.edu.in" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center justify-between rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 px-4 py-3 text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="rounded-full bg-white/20 p-2">
+                    <Globe className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">University Brochure</p>
+                    <p className="text-sm text-white/80">Official JLU Website</p>
+                  </div>
+                </div>
+                <ExternalLink className="h-4 w-4" />
+              </a>
+            </div>
           </div>
         </div>
       </div>

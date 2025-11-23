@@ -27,13 +27,18 @@ export function StudentSidebar() {
   const pathname = usePathname()
 
   return (
-    <div className="flex h-screen w-64 flex-col border-r border-border bg-card">
-      <div className="flex h-16 items-center border-b border-border px-6">
+    <div 
+      className="flex h-screen w-64 flex-col border-r border-border bg-cover bg-center bg-no-repeat"
+      style={{
+        backgroundImage: "linear-gradient(rgba(30, 41, 59, 0.25), rgba(15, 23, 42, 0.9)), url('/sidebar1jlu.png')",
+      }}
+    >
+      <div className="flex h-16 items-center border-b border-border/20 px-6 bg-black/20 ">
         <Link href="/student-dashboard" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
             <LayoutDashboard className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="text-xl font-bold text-foreground">Student Portal</span>
+          <span className="text-xl font-bold text-white">Student Portal</span>
         </Link>
       </div>
 
@@ -46,8 +51,8 @@ export function StudentSidebar() {
               href={item.href}
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  ? "bg-primary text-white shadow-lg"
+                  : "text-white/90 hover:bg-white/10 hover:text-white backdrop-blur-sm"
               }`}
             >
               <item.icon className="h-5 w-5" />
