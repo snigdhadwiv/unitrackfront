@@ -1,4 +1,3 @@
-// app/faculty/attendance/page.tsx
 "use client"
 
 import { useState, useEffect } from "react"
@@ -9,9 +8,10 @@ import { api } from "@/services/api"
 
 interface Student {
   id: number
-  student_id: string
+  email: string
   first_name: string
   last_name: string
+  student_id: string
 }
 
 interface Course {
@@ -38,16 +38,19 @@ export default function FacultyAttendance() {
 
   useEffect(() => {
     fetchData()
-    fetchCourses()
-  }, [selectedDate])
+    fetchFacultyCourses()
+  }, [selectedDate, selectedCourse])
 
   const fetchData = async () => {
     try {
-      const [studentsData, attendanceData] = await Promise.all([
-        api.getStudents(),
-        api.getAttendance({ date: selectedDate })
-      ])
-      setStudents(studentsData)
+      const user = JSON.parse(localStorage.getItem("user") || "{}")
+      
+      // Get faculty's students
+      const facultyStudents = await api.getFacultyStudents(user.id)
+      setStudents(facultyStudents)
+
+      // Get attendance for selected date
+      const attendanceData = await api.getAttendance({ date: selectedDate })
       setAttendance(attendanceData)
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -56,23 +59,38 @@ export default function FacultyAttendance() {
     }
   }
 
-  const fetchCourses = async () => {
+  const fetchFacultyCourses = async () => {
     try {
-      const allCourses = await api.getCourses()
-      setCourses(allCourses)
+      const user = JSON.parse(localStorage.getItem("user") || "{}")
+      const facultyCourses = await api.getFacultyCourses(user.id)
+      setCourses(facultyCourses)
     } catch (error) {
       console.error('Error fetching courses:', error)
     }
   }
 
-  // Filter students by course enrollment
-  const getEnrolledStudents = () => {
+  // Filter students by selected course
+  const getEnrolledStudents = async () => {
     if (!selectedCourse) return students
-    // For now, return all students - we'll implement proper filtering later
-    return students
+    
+    try {
+      const courseStudents = await api.getCourseStudents(selectedCourse.toString())
+      return courseStudents
+    } catch (error) {
+      console.error('Error fetching course students:', error)
+      return students
+    }
   }
 
-  const enrolledStudents = getEnrolledStudents()
+  const [enrolledStudents, setEnrolledStudents] = useState<Student[]>([])
+
+  useEffect(() => {
+    const updateEnrolledStudents = async () => {
+      const enrolled = await getEnrolledStudents()
+      setEnrolledStudents(enrolled)
+    }
+    updateEnrolledStudents()
+  }, [selectedCourse, students])
 
   const handleMarkAttendance = async (studentId: number, status: string) => {
     try {
@@ -93,7 +111,7 @@ export default function FacultyAttendance() {
       }
       
       fetchData()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error marking attendance:', error)
       alert('Failed to mark attendance: ' + error.message)
     }
@@ -132,7 +150,7 @@ export default function FacultyAttendance() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Faculty Attendance</h1>
-          <p className="text-muted-foreground">Mark attendance for all students</p>
+          <p className="text-muted-foreground">Mark attendance for your students</p>
         </div>
         <Button className="gap-2">
           <Download className="h-4 w-4" />
@@ -174,7 +192,7 @@ export default function FacultyAttendance() {
               onChange={(e) => setSelectedCourse(e.target.value ? Number(e.target.value) : null)}
               className="w-full p-2 border rounded"
             >
-              <option value="">All Courses</option>
+              <option value="">All My Courses</option>
               {courses.map((course) => (
                 <option key={course.id} value={course.id}>
                   {course.course_code} - {course.course_name}
@@ -242,7 +260,9 @@ export default function FacultyAttendance() {
                     <h3 className="font-medium">
                       {student.first_name} {student.last_name}
                     </h3>
-                    <p className="text-sm text-muted-foreground">ID: {student.student_id}</p>
+                    <p className="text-sm text-muted-foreground">
+                      ID: {student.student_id} • Email: {student.email}
+                    </p>
                   </div>
                   
                   <div className="flex items-center gap-2">

@@ -14,11 +14,15 @@ class ApiService {
       url += `?${searchParams.toString()}`
     }
 
+    // GET CSRF TOKEN
+    const csrfToken = this.getCSRFToken()
+    
     try {
       const response = await fetch(url, {
         ...fetchOptions,
         headers: {
           "Content-Type": "application/json",
+          ...(csrfToken && { "X-CSRFToken": csrfToken }), // ADD CSRF TOKEN TO ALL REQUESTS
           ...fetchOptions.headers,
         },
         credentials: fetchOptions.credentials || "include",
@@ -44,7 +48,26 @@ class ApiService {
     }
   }
 
-  // 🔑 LOGIN THAT WORKS FOR EMAIL OR USERNAME
+  // CSRF TOKEN GETTER
+  private getCSRFToken(): string | null {
+    if (typeof document === 'undefined') return null;
+    
+    const name = 'csrftoken';
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  // 🔑 AUTH METHODS
   async login(identifier: string, password: string) {
     const isEmail = identifier.includes("@")
     const loginData = isEmail
@@ -72,8 +95,21 @@ class ApiService {
     return this.request("/auth/me/")
   }
 
-  async getUserByIdentifier(identifier: string) {
-    return this.request(`/auth/user/${identifier}/`)
+  // ---------------- FACULTY METHODS ----------------
+  async getFacultyCourses(facultyId: string) {
+    return this.request(`/enrollments/faculty/${facultyId}/courses/`)
+  }
+
+  async getCourseStudents(courseId: string) {
+    return this.request(`/enrollments/courses/${courseId}/students/`)
+  }
+
+  async getFacultyStudents(facultyId: string) {
+    return this.request(`/enrollments/faculty/${facultyId}/students/`)
+  }
+
+  async getFacultyAttendance(facultyId: string, params?: Record<string, string>) {
+    return this.request(`/attendance/faculty/${facultyId}/`, { params })
   }
 
   // ---------------- STUDENT METHODS ----------------
@@ -83,15 +119,6 @@ class ApiService {
   async getStudent(id: string) {
     return this.request(`/students/${id}/`)
   }
-  async createStudent(data: any) {
-    return this.request("/students/", { method: "POST", body: JSON.stringify(data) })
-  }
-  async updateStudent(id: string, data: any) {
-    return this.request(`/students/${id}/`, { method: "PUT", body: JSON.stringify(data) })
-  }
-  async deleteStudent(id: string) {
-    return this.request(`/students/${id}/`, { method: "DELETE" })
-  }
 
   // ---------------- COURSES ----------------
   async getCourses(params?: Record<string, string>) {
@@ -99,26 +126,6 @@ class ApiService {
   }
   async getCourse(id: string) {
     return this.request(`/courses/${id}/`)
-  }
-  async createCourse(data: any) {
-    return this.request("/courses/", { method: "POST", body: JSON.stringify(data) })
-  }
-  async updateCourse(id: string, data: any) {
-    return this.request(`/courses/${id}/`, { method: "PUT", body: JSON.stringify(data) })
-  }
-  async deleteCourse(id: string) {
-    return this.request(`/courses/${id}/`, { method: "DELETE" })
-  }
-
-  // ---------------- FACULTY ----------------
-  async getFaculty(params?: Record<string, string>) {
-    return this.request("/faculty/", { params })
-  }
-  async createFaculty(data: any) {
-    return this.request("/faculty/", { method: "POST", body: JSON.stringify(data) })
-  }
-  async getFacultyCourses(facultyId: string) {
-    return this.request(`/faculty/${facultyId}/courses/`)
   }
 
   // ---------------- ENROLLMENTS ----------------
@@ -128,9 +135,6 @@ class ApiService {
   async getMyEnrollments() {
     const user = JSON.parse(localStorage.getItem("user") || "{}")
     return this.getStudentEnrollments(user.id)
-  }
-  async createEnrollment(data: any) {
-    return this.request("/enrollments/enrollments/", { method: "POST", body: JSON.stringify(data) })
   }
 
   // ---------------- ATTENDANCE ----------------
@@ -147,21 +151,6 @@ class ApiService {
   // ---------------- MARKS ----------------
   async getMarks(params?: Record<string, string>) {
     return this.request("/marks/", { params })
-  }
-  async getStudentMarks(studentId: string) {
-    return this.request(`/marks/?student=${studentId}`)
-  }
-  async getSubjectMarks(subjectId: string) {
-    return this.request(`/marks/?subject=${subjectId}`)
-  }
-  async createMarks(data: any) {
-    return this.request("/marks/", { method: "POST", body: JSON.stringify(data) })
-  }
-  async updateMarks(id: string, data: any) {
-    return this.request(`/marks/${id}/`, { method: "PUT", body: JSON.stringify(data) })
-  }
-  async deleteMarks(id: string) {
-    return this.request(`/marks/${id}/`, { method: "DELETE" })
   }
 
   // ---------------- ANALYTICS ----------------
